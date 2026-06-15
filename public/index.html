@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trophy House AI Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #111118;
+      --bg-input: #18181f;
+      --bg-hover: #1e1e28;
+      --border: rgba(255,255,255,0.07);
+      --border-focus: rgba(212,175,55,0.45);
+      --text-primary: #f0f0f5;
+      --text-secondary: #8888a0;
+      --text-muted: #4a4a60;
+      --accent: #c9a227;
+      --accent-dim: rgba(201,162,39,0.12);
+      --green: #22c55e;
+      --red: #ef4444;
+      --amber: #f59e0b;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      grid-template-rows: 56px 1fr;
+      min-height: 100vh;
+    }
+
+    header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,15,0.92);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #c9a227, #8b6914);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .status-pill, .step-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+    .status-dot.ok { background: var(--green); }
+    .status-dot.error { background: var(--red); }
+
+    .sidebar {
+      border-right: 1px solid var(--border);
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      margin-bottom: 10px;
+    }
+
+    textarea#matter {
+      width: 100%;
+      min-height: 220px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--text-primary);
+      resize: vertical;
+      outline: none;
+      line-height: 1.65;
+    }
+
+    textarea#matter:focus { border-color: var(--border-focus); }
+    textarea#matter::placeholder { color: var(--text-muted); }
+
+    .char-count { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #c9a227, #a67c00);
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: #0a0a0f;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .btn-primary:hover { opacity: 0.92; }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-secondary {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+    .api-alert {
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: #fcd34d;
+      line-height: 1.6;
+      display: none;
+    }
+
+    .rules-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .rules-card ul {
+      margin: 8px 0 0 16px;
+    }
+
+    .rules-card li { margin-bottom: 4px; }
+
+    .option-grid {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .option-grid.visible { display: flex; }
+
+    .option-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+    }
+
+    .option-btn:hover { border-color: rgba(201,162,39,0.4); background: var(--bg-hover); }
+    .option-btn.recommended { border-color: rgba(201,162,39,0.55); background: var(--accent-dim); }
+    .option-btn .opt-num { font-weight: 600; color: var(--accent); }
+    .option-btn .opt-theme { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .canvas {
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .result-zone {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 40px;
+      min-height: 500px;
+    }
+
+    .empty-state, .loading-state {
+      text-align: center;
+      max-width: 420px;
+      margin: auto;
+    }
+
+    .empty-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 28px;
+    }
+
+    .empty-state h2, .loading-state h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-state p, .loading-state p {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .spinner-ring {
+      width: 56px;
+      height: 56px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .result-panel {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .image-frame {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+
+    .image-frame img { width: 100%; display: block; }
+
+    .recommendation {
+      background: var(--accent-dim);
+      border: 1px solid rgba(201,162,39,0.3);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .recommendation h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .recommendation ul {
+      margin: 0 0 0 18px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .recommendation li { margin-bottom: 4px; }
+
+    .image-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 14px 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .action-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .action-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1a0a0a;
+      border: 1px solid rgba(239,68,68,0.4);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #fca5a5;
+      max-width: 360px;
+      z-index: 999;
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .app { grid-template-columns: 1fr; grid-template-rows: 56px auto 1fr; }
+      .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+      .result-zone { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🏆</div>
+      Trophy House AI Agent
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <div class="step-pill" id="stepPill">Step 1 — Enter matter</div>
+      <div class="status-pill">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Checking...</span>
+      </div>
+    </div>
+  </header>
+
+  <aside class="sidebar">
+    <div class="api-alert" id="apiAlert">
+      ⚠ OpenAI API key not set. Add <code>OPENAI_API_KEY</code> to <code>.env</code> and restart the server.
+    </div>
+
+    <div>
+      <p class="section-label">Award Matter</p>
+      <p class="hint">Enter all text for the trophy sticker — award title, event level, institution names, year, category, etc. Design rules are applied automatically.</p>
+      <textarea id="matter" maxlength="2000" placeholder="काव्यसंमेलन स्पर्धा&#10;जिल्हास्तरीय&#10;सावित्रीबाई फुले पुणे विद्यापीठ&#10;सी.एम.सी.एस महाविद्यालय, नाशिक&#10;२०२५"></textarea>
+      <div class="char-count" id="charCount">0 / 2000</div>
+    </div>
+
+    <button class="btn-primary" id="previewBtn" onclick="generatePreview()">
+      ⬡ Generate 5 Design Options
+    </button>
+
+    <div class="option-grid" id="optionGrid">
+      <p class="section-label">Select Your Design</p>
+      <p class="hint">Choose one option to generate final production artwork.</p>
+      <div id="optionButtons"></div>
+    </div>
+
+    <button class="btn-secondary" id="resetBtn" onclick="resetWorkflow()" style="display:none;">
+      ↺ Start new design
+    </button>
+
+    <div class="rules-card">
+      <strong>Built-in design rules</strong>
+      <ul>
+        <li>Vertical portrait oval shape only</li>
+        <li>5 unique premium themes — not color variants</li>
+        <li>Marathi typography readability priority</li>
+        <li>Print-ready for 90×65mm and 100×75mm</li>
+        <li>UV / vinyl / trophy manufacturing quality</li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="canvas">
+    <div class="result-zone" id="resultZone">
+      <div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <h2>Premium Trophy Sticker Designer</h2>
+        <p>Enter your award matter and generate five unique vertical oval sticker concepts. Select your favourite to receive final production artwork and editable SVG.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let healthData = { openaiConfigured: false };
+  let session = { matter: '', preview: null, final: null };
+
+  const OPTION_LABELS = {
+    1: 'Premium University Gold',
+    2: 'Royal Blue Excellence',
+    3: 'Literary Poetry Theme',
+    4: 'Maharashtrian Cultural Theme',
+    5: 'Ultra Luxury Trophy Theme',
+  };
+
+  document.getElementById('matter').addEventListener('input', function () {
+    document.getElementById('charCount').textContent = `${this.value.length} / 2000`;
+  });
+
+  document.getElementById('matter').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') generatePreview();
+  });
+
+  async function checkHealth() {
+    try {
+      const res = await fetch('/api/health');
+      healthData = await res.json();
+      const dot = document.getElementById('statusDot');
+      const txt = document.getElementById('statusText');
+      const alert = document.getElementById('apiAlert');
+
+      if (healthData.openaiConfigured) {
+        dot.className = 'status-dot ok';
+        txt.textContent = 'Ready';
+        alert.style.display = 'none';
+      } else {
+        dot.className = 'status-dot error';
+        txt.textContent = 'API key missing';
+        alert.style.display = 'block';
+      }
+    } catch {
+      document.getElementById('statusText').textContent = 'Server offline';
+    }
+  }
+
+  checkHealth();
+
+  function setStep(text) {
+    document.getElementById('stepPill').textContent = text;
+  }
+
+  function setLoading(title, subtitle) {
+    document.getElementById('resultZone').innerHTML = `
+      <div class="loading-state">
+        <div class="spinner-ring"></div>
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(subtitle)}</p>
+        <p style="margin-top:8px;font-size:12px;color:var(--text-muted);">This may take 30–60 seconds…</p>
+      </div>`;
+  }
+
+  async function generatePreview() {
+    const matter = document.getElementById('matter').value.trim();
+    if (!matter) { showToast('Enter award matter first.'); return; }
+    if (!healthData.openaiConfigured) { showToast('OpenAI API key not configured.'); return; }
+
+    const btn = document.getElementById('previewBtn');
+    btn.disabled = true;
+    btn.textContent = '⟳ Generating 5 options…';
+    setStep('Step 1 — Creating preview');
+    setLoading('Designing 5 trophy sticker options', 'Applying master design rules to your award matter');
+
+    try {
+      const res = await fetch('/api/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matter }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error); resetCanvas(); return; }
+
+      session.matter = matter;
+      session.preview = data;
+      session.final = null;
+
+      showPreview(data);
+      renderOptionButtons(data);
+      setStep('Step 2 — Select an option');
+      document.getElementById('resetBtn').style.display = 'block';
+    } catch {
+      showToast('Cannot reach server. Is it running?');
+      resetCanvas();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⬡ Generate 5 Design Options';
+    }
+  }
+
+  function showPreview(data) {
+    const rec = data.recommendation || {};
+    const recOption = rec.recommendedOption;
+    const reasons = rec.reasons || [];
+
+    const recHtml = recOption ? `
+      <div class="recommendation">
+        <h4>★ Recommended: Option ${recOption} — ${escapeHtml(rec.title || OPTION_LABELS[recOption] || '')}</h4>
+        <ul>${reasons.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ul>
+      </div>` : '';
+
+    document.getElementById('resultZone').innerHTML = `
+      <div class="result-panel">
+        <div class="image-frame">
+          <img src="${data.imageUrl}" alt="5 trophy sticker options preview" />
+          <div class="image-actions">
+            <a class="action-btn" href="${data.imageUrl}" download="trophy-preview.png" target="_blank">↓ Download preview</a>
+          </div>
+        </div>
+        ${recHtml}
+        <p style="font-size:13px;color:var(--text-secondary);">Select an option from the sidebar to generate your final trophy sticker.</p>
+      </div>`;
+  }
+
+  function renderOptionButtons(data) {
+    const grid = document.getElementById('optionGrid');
+    const container = document.getElementById('optionButtons');
+    const rec = data.recommendation?.recommendedOption;
+
+    container.innerHTML = [1, 2, 3, 4, 5].map(n => `
+      <button class="option-btn${rec === n ? ' recommended' : ''}" onclick="finalizeOption(${n})">
+        <div class="opt-num">Option ${n}${rec === n ? ' ★ Recommended' : ''}</div>
+        <div class="opt-theme">${escapeHtml(OPTION_LABELS[n])}</div>
+      </button>`).join('');
+
+    grid.classList.add('visible');
+  }
+
+  async function finalizeOption(option) {
+    if (!session.matter) { showToast('Generate a preview first.'); return; }
+    if (!healthData.openaiConfigured) { showToast('OpenAI API key not configured.'); return; }
+
+    setStep(`Step 3 — Finalizing Option ${option}`);
+    setLoading(`Creating final Option ${option} artwork`, 'Production sticker + editable SVG');
+
+    document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+
+    try {
+      const res = await fetch('/api/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matter: session.matter, option }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error); if (session.preview) showPreview(session.preview); return; }
+
+      session.final = data;
+      showFinal(data);
+      setStep('Complete — Final artwork ready');
+    } catch {
+      showToast('Cannot reach server.');
+      if (session.preview) showPreview(session.preview);
+    } finally {
+      document.querySelectorAll('.option-btn').forEach(b => b.disabled = false);
+    }
+  }
+
+  function showFinal(data) {
+    const svgNote = data.svg
+      ? '<span style="color:var(--green);">✓ Editable SVG included</span>'
+      : data.svgError
+        ? `<span style="color:var(--amber);">⚠ SVG unavailable: ${escapeHtml(data.svgError)}</span>`
+        : '';
+
+    document.getElementById('resultZone').innerHTML = `
+      <div class="result-panel">
+        <div class="image-frame">
+          <img src="${data.imageUrl}" alt="Final trophy sticker Option ${data.selectedOption}" />
+          <div class="image-actions">
+            <a class="action-btn" href="${data.imageUrl}" download="trophy-option-${data.selectedOption}.png" target="_blank">↓ Download PNG</a>
+            ${data.svg ? `<button class="action-btn" onclick="downloadSvg()">↓ Download SVG</button>` : ''}
+            <button class="action-btn" onclick="generatePreview()">↺ Regenerate preview</button>
+          </div>
+        </div>
+        <div class="recommendation">
+          <h4>Option ${data.selectedOption} — ${escapeHtml(data.optionDetails?.name || '')}</h4>
+          <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">
+            ${escapeHtml(data.optionDetails?.theme || '')} · ${svgNote}
+          </p>
+        </div>
+      </div>`;
+  }
+
+  function downloadSvg() {
+    if (!session.final?.svg) { showToast('No SVG available.'); return; }
+    const blob = new Blob([session.final.svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `trophy-option-${session.final.selectedOption}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('SVG downloaded!', true);
+  }
+
+  function resetWorkflow() {
+    session = { matter: '', preview: null, final: null };
+    document.getElementById('matter').value = '';
+    document.getElementById('charCount').textContent = '0 / 2000';
+    document.getElementById('optionGrid').classList.remove('visible');
+    document.getElementById('resetBtn').style.display = 'none';
+    setStep('Step 1 — Enter matter');
+    resetCanvas();
+  }
+
+  function resetCanvas() {
+    document.getElementById('resultZone').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <h2>Premium Trophy Sticker Designer</h2>
+        <p>Enter your award matter and generate five unique vertical oval sticker concepts.</p>
+      </div>`;
+  }
+
+  function showToast(msg, success = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    t.style.borderColor = success ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)';
+    t.style.color = success ? '#86efac' : '#fca5a5';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.display = 'none'; }, 4000);
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
