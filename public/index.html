@@ -224,6 +224,278 @@
     .option-btn .opt-num { font-weight: 600; color: var(--accent); }
     .option-btn .opt-theme { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
+    /* ── Chat layout ── */
+    .canvas.chat-layout {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 56px);
+      overflow: hidden;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .chat-welcome {
+      text-align: center;
+      max-width: 480px;
+      margin: auto;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .chat-msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 85%;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-msg.user { align-self: flex-end; }
+    .chat-msg.assistant { align-self: flex-start; }
+
+    .chat-bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .chat-msg.user .chat-bubble {
+      background: var(--accent-dim);
+      border: 1px solid rgba(201,162,39,0.35);
+      color: var(--text-primary);
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-msg.assistant .chat-bubble {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      padding: 0 4px;
+    }
+
+    .chat-msg.user .chat-meta { text-align: right; }
+
+    .chat-image-card {
+      margin-top: 10px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      max-width: 360px;
+    }
+
+    .chat-image-card img {
+      width: 100%;
+      display: block;
+      cursor: pointer;
+    }
+
+    .chat-image-actions {
+      display: flex;
+      gap: 6px;
+      padding: 8px 10px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .chat-image-actions button,
+    .chat-image-actions a {
+      font-size: 11px;
+      padding: 5px 10px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .version-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0a0a0f;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-bottom: 6px;
+    }
+
+    .chat-loading .chat-bubble {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chat-loading .mini-spin {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .chat-composer {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px 20px;
+      background: rgba(10,10,15,0.95);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .chat-composer textarea {
+      flex: 1;
+      min-height: 48px;
+      max-height: 120px;
+      resize: vertical;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--text-primary);
+      outline: none;
+      line-height: 1.5;
+    }
+
+    .chat-composer textarea:focus { border-color: var(--border-focus); }
+
+    .chat-composer button {
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #0a0a0f;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .chat-composer button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .chat-composer button.btn-stop {
+      background: #2a2a35;
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      min-width: 48px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chat-composer button.btn-stop:hover {
+      background: #35354a;
+      border-color: rgba(239,68,68,0.45);
+    }
+
+    .stop-icon {
+      width: 14px;
+      height: 14px;
+      background: #ef4444;
+      border-radius: 3px;
+      display: block;
+    }
+
+    .generating-bar {
+      display: none;
+      border-top: 1px solid rgba(201,162,39,0.25);
+      background: linear-gradient(90deg, rgba(201,162,39,0.08), rgba(201,162,39,0.02));
+      padding: 10px 24px;
+    }
+
+    .generating-bar.visible { display: block; }
+
+    .generating-bar-inner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .gen-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: genPulse 1.2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes genPulse {
+      0%, 100% { opacity: 0.35; transform: scale(0.85); }
+      50% { opacity: 1; transform: scale(1.15); }
+    }
+
+    .gen-dots span {
+      animation: genDot 1.4s infinite;
+      opacity: 0.2;
+    }
+    .gen-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .gen-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes genDot {
+      0%, 60%, 100% { opacity: 0.2; }
+      30% { opacity: 1; }
+    }
+
+    .gen-timer {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .step-pill.generating {
+      border-color: rgba(201,162,39,0.45);
+      color: var(--accent);
+      animation: stepGlow 1.5s ease-in-out infinite;
+    }
+
+    @keyframes stepGlow {
+      0%, 100% { box-shadow: none; }
+      50% { box-shadow: 0 0 0 2px rgba(201,162,39,0.15); }
+    }
+
+    .chat-loading .loading-steps {
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .chat-msg.cancelled .chat-bubble {
+      border-style: dashed;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
     .canvas {
       display: flex;
       flex-direction: column;
@@ -284,7 +556,7 @@
 
     .result-panel {
       width: 100%;
-      max-width: 900px;
+      max-width: 1100px;
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -320,6 +592,223 @@
     }
 
     .recommendation li { margin-bottom: 4px; }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      width: 100%;
+    }
+
+    .option-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .option-card .label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .option-card.recommended .label { color: #f0d060; }
+
+    .option-card .thumb {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .option-card.recommended .thumb {
+      border-color: rgba(201,162,39,0.55);
+      box-shadow: 0 0 0 1px rgba(201,162,39,0.25);
+    }
+
+    .option-card .thumb:hover { border-color: var(--accent); }
+    .option-card .thumb img { width: 100%; display: block; }
+
+    .font-note {
+      font-size: 11px;
+      color: var(--green);
+      margin-top: 4px;
+    }
+
+    .upload-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .upload-box {
+      background: var(--bg-input);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      transition: border-color 0.15s;
+    }
+
+    .upload-box.has-file {
+      border-color: rgba(201,162,39,0.4);
+      border-style: solid;
+    }
+
+    .upload-box label.upload-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
+
+    .upload-box .optional {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .upload-box input[type="file"] {
+      display: none;
+    }
+
+    .upload-preview {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .upload-preview.visible {
+      display: flex;
+    }
+
+    .upload-preview img {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .upload-preview .upload-meta {
+      flex: 1;
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .upload-clear {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+
+    .upload-clear:hover { color: var(--red); }
+
+    .shape-detected {
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 4px;
+      display: none;
+    }
+
+    .shape-detected.visible { display: block; }
+
+    .refine-panel {
+      margin-top: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .refine-panel h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      margin-bottom: 8px;
+      color: var(--accent);
+    }
+
+    .refine-history {
+      max-height: 120px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .refine-history .item {
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .refine-history .item:last-child { border-bottom: none; }
+
+    .refine-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .refine-row input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .refine-row input:focus { border-color: var(--border-focus); }
+
+    .refine-row button {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0a0a0f;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .refine-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .refine-hints {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    select {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: var(--text-primary);
+      outline: none;
+      cursor: pointer;
+    }
+
+    select:focus { border-color: var(--border-focus); }
 
     .image-actions {
       display: flex;
@@ -363,7 +852,11 @@
       display: none;
     }
 
+    @media (max-width: 1100px) {
+      .options-grid { grid-template-columns: repeat(3, 1fr); }
+    }
     @media (max-width: 768px) {
+      .options-grid { grid-template-columns: repeat(2, 1fr); }
       .app { grid-template-columns: 1fr; grid-template-rows: 56px auto 1fr; }
       .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
       .result-zone { padding: 20px; }
@@ -379,7 +872,7 @@
       Trophy House AI Agent
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
-      <div class="step-pill" id="stepPill">Step 1 — Enter matter</div>
+      <div class="step-pill" id="stepPill">Ready</div>
       <div class="status-pill">
         <span class="status-dot" id="statusDot"></span>
         <span id="statusText">Checking...</span>
@@ -395,43 +888,114 @@
     <div>
       <p class="section-label">Award Matter</p>
       <p class="hint">Enter all text for the trophy sticker — award title, event level, institution names, year, category, etc. Design rules are applied automatically.</p>
-      <textarea id="matter" maxlength="2000" placeholder="काव्यसंमेलन स्पर्धा&#10;जिल्हास्तरीय&#10;सावित्रीबाई फुले पुणे विद्यापीठ&#10;सी.एम.सी.एस महाविद्यालय, नाशिक&#10;२०२५"></textarea>
+      <textarea id="matter" maxlength="2000" placeholder="Header:&#10;क्रिएटिव्ह अकॅडमी, नाशिक&#10;&#10;Title:&#10;सन्मानचिन्ह&#10;&#10;Body:&#10;आपण सामाजिक क्षेत्रात&#10;केलेल्या कार्याबद्दल&#10;आपला सन्मान करण्यात&#10;येत आहे.&#10;&#10;Presenter:&#10;रतन पाटील सन्मान समिती, नाशिक"></textarea>
       <div class="char-count" id="charCount">0 / 2000</div>
     </div>
 
-    <button class="btn-primary" id="previewBtn" onclick="generatePreview()">
-      ⬡ Generate 5 Design Options
-    </button>
+    <div>
+      <p class="section-label">Optional uploads</p>
+      <div class="upload-section">
+        <div class="upload-box" id="baseBox">
+          <label class="upload-label" for="trophyBaseInput">
+            🏆 Trophy base
+            <span class="optional">(optional — AI detects shape)</span>
+          </label>
+          <p class="hint" style="margin:0;">Upload your blank trophy/plaque photo. AI matches its shape.</p>
+          <input type="file" id="trophyBaseInput" accept="image/png,image/jpeg,image/webp" onchange="onBaseUpload(this)" />
+          <label for="trophyBaseInput" class="btn-secondary" style="display:inline-block;text-align:center;margin-top:8px;cursor:pointer;">Choose base image</label>
+          <div class="upload-preview" id="basePreview">
+            <img id="baseThumb" alt="Trophy base preview" />
+            <div class="upload-meta" id="baseMeta"></div>
+          </div>
+          <button type="button" class="upload-clear" id="baseClear" onclick="clearBase()" style="display:none;">Remove base</button>
+          <div class="shape-detected" id="shapeDetected"></div>
+        </div>
 
-    <div class="option-grid" id="optionGrid">
-      <p class="section-label">Select Your Design</p>
-      <p class="hint">Choose one option to generate final production artwork.</p>
-      <div id="optionButtons"></div>
+        <div class="upload-box" id="photoBox">
+          <label class="upload-label" for="photoInput">
+            📷 Logo / photo
+            <span class="optional">(optional — placed on trophy)</span>
+          </label>
+          <p class="hint" style="margin:0;">University logo, college emblem, or portrait — placed at top centre.</p>
+          <input type="file" id="photoInput" accept="image/png,image/jpeg,image/webp" onchange="onPhotoUpload(this)" />
+          <label for="photoInput" class="btn-secondary" style="display:inline-block;text-align:center;margin-top:8px;cursor:pointer;">Choose photo</label>
+          <div class="upload-preview" id="photoPreview">
+            <img id="photoThumb" alt="Photo preview" />
+            <div class="upload-meta" id="photoMeta"></div>
+          </div>
+          <button type="button" class="upload-clear" id="photoClear" onclick="clearPhoto()" style="display:none;">Remove photo</button>
+        </div>
+      </div>
     </div>
 
+    <div>
+      <p class="section-label">Image model</p>
+      <select id="imageProvider" onchange="onProviderChange()">
+        <option value="openai" selected>OpenAI — gpt-image-2</option>
+        <option value="replicate">Replicate — FLUX.2 Pro</option>
+      </select>
+      <p class="hint" id="providerHint" style="margin-top:6px;">High quality OpenAI image generation.</p>
+    </div>
+
+    <div>
+      <p class="section-label">Layout type</p>
+      <select id="layout" onchange="onLayoutChange()">
+        <option value="certificate" selected>Certificate / सन्मानचिन्ह (like ChatGPT ref)</option>
+        <option value="sticker">Trophy sticker (oval only)</option>
+      </select>
+    </div>
+
+    <div id="themeRow">
+      <p class="section-label">Design style</p>
+      <select id="theme">
+        <option value="2" selected>Royal Blue Excellence</option>
+        <option value="1">Premium University Gold</option>
+        <option value="3">Literary Poetry Theme</option>
+        <option value="4">Maharashtrian Cultural Theme</option>
+        <option value="5">Ultra Luxury Black &amp; Gold</option>
+      </select>
+    </div>
+
+    <button class="btn-primary" id="generateBtn" onclick="startChat()">
+      ⬡ Start design in chat
+    </button>
+
     <button class="btn-secondary" id="resetBtn" onclick="resetWorkflow()" style="display:none;">
-      ↺ Start new design
+      ↺ New conversation
     </button>
 
     <div class="rules-card">
-      <strong>Built-in design rules</strong>
+      <strong>How to use</strong>
       <ul>
-        <li>Vertical portrait oval shape only</li>
-        <li>5 unique premium themes — not color variants</li>
-        <li>Marathi typography readability priority</li>
-        <li>Print-ready for 90×65mm and 100×75mm</li>
-        <li>UV / vinyl / trophy manufacturing quality</li>
+        <li>Enter award matter, then chat on the right</li>
+        <li>Each message creates a <strong>new</strong> image version</li>
+        <li>Full history kept — scroll up to compare progress</li>
+        <li>Marathi text via Noto Sans Devanagari</li>
       </ul>
     </div>
   </aside>
 
-  <main class="canvas">
-    <div class="result-zone" id="resultZone">
-      <div class="empty-state">
-        <div class="empty-icon">🏆</div>
-        <h2>Premium Trophy Sticker Designer</h2>
-        <p>Enter your award matter and generate five unique vertical oval sticker concepts. Select your favourite to receive final production artwork and editable SVG.</p>
+  <main class="canvas chat-layout">
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-welcome">
+        <div class="empty-icon" style="margin:0 auto 16px;">💬</div>
+        <h2 style="font-family:'Space Grotesk',sans-serif;color:var(--text-primary);margin-bottom:8px;">Design chat</h2>
+        <p>Enter your award matter in the sidebar, then click <strong>Start design in chat</strong> or type a request below. Every reply creates a <strong>new image</strong> — your full history stays here.</p>
       </div>
+    </div>
+    <div class="generating-bar" id="generatingBar">
+      <div class="generating-bar-inner">
+        <span class="gen-pulse"></span>
+        <span id="generatingStatus">Generating your design</span>
+        <span class="gen-dots"><span>.</span><span>.</span><span>.</span></span>
+        <span class="gen-timer" id="generatingTimer">0s</span>
+      </div>
+    </div>
+    <div class="chat-composer">
+      <textarea id="chatInput" rows="2" maxlength="500"
+        placeholder="Create my trophy design… or ask: white background, remove logo, change title…"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!session.isLoading){event.preventDefault();sendChat();}"></textarea>
+      <button id="chatSendBtn" onclick="onChatAction()" title="Send">Send</button>
     </div>
   </main>
 </div>
@@ -440,7 +1004,21 @@
 
 <script>
   let healthData = { openaiConfigured: false };
-  let session = { matter: '', preview: null, final: null };
+  let session = { matter: '', result: null, chat: [], isLoading: false };
+  let uploads = { trophyBase: null, photo: null, shapeProfile: null };
+  let abortController = null;
+  let loadingTimers = { step: null, clock: null, started: 0 };
+  let activeLoadingId = null;
+
+  const GENERATION_STEPS = [
+    'Reading your request…',
+    'Building visual design prompt…',
+    'Generating trophy artwork (30–60s)…',
+    'Rendering Marathi text overlay…',
+    'Finalizing your design…',
+  ];
+
+  const MAX_UPLOAD_MB = 8;
 
   const OPTION_LABELS = {
     1: 'Premium University Gold',
@@ -455,206 +1033,497 @@
   });
 
   document.getElementById('matter').addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') generatePreview();
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') startChat();
   });
 
-  async function checkHealth() {
-    try {
-      const res = await fetch('/api/health');
-      healthData = await res.json();
-      const dot = document.getElementById('statusDot');
-      const txt = document.getElementById('statusText');
-      const alert = document.getElementById('apiAlert');
-
-      if (healthData.openaiConfigured) {
-        dot.className = 'status-dot ok';
-        txt.textContent = 'Ready';
-        alert.style.display = 'none';
-      } else {
-        dot.className = 'status-dot error';
-        txt.textContent = 'API key missing';
-        alert.style.display = 'block';
-      }
-    } catch {
-      document.getElementById('statusText').textContent = 'Server offline';
-    }
+  function scrollChatToBottom() {
+    const el = document.getElementById('chatMessages');
+    el.scrollTop = el.scrollHeight;
   }
 
-  checkHealth();
-
-  function setStep(text) {
-    document.getElementById('stepPill').textContent = text;
+  function formatTime(ts) {
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  function setLoading(title, subtitle) {
-    document.getElementById('resultZone').innerHTML = `
-      <div class="loading-state">
-        <div class="spinner-ring"></div>
-        <h3>${escapeHtml(title)}</h3>
-        <p>${escapeHtml(subtitle)}</p>
-        <p style="margin-top:8px;font-size:12px;color:var(--text-muted);">This may take 30–60 seconds…</p>
-      </div>`;
-  }
+  function setChatLoading(loading, statusText) {
+    session.isLoading = loading;
+    const btn = document.getElementById('chatSendBtn');
+    const bar = document.getElementById('generatingBar');
+    const pill = document.getElementById('stepPill');
 
-  async function generatePreview() {
-    const matter = document.getElementById('matter').value.trim();
-    if (!matter) { showToast('Enter award matter first.'); return; }
-    if (!healthData.openaiConfigured) { showToast('OpenAI API key not configured.'); return; }
-
-    const btn = document.getElementById('previewBtn');
-    btn.disabled = true;
-    btn.textContent = '⟳ Generating 5 options…';
-    setStep('Step 1 — Creating preview');
-    setLoading('Designing 5 trophy sticker options', 'Applying master design rules to your award matter');
-
-    try {
-      const res = await fetch('/api/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matter }),
-      });
-      const data = await res.json();
-      if (!res.ok) { showToast(data.error); resetCanvas(); return; }
-
-      session.matter = matter;
-      session.preview = data;
-      session.final = null;
-
-      showPreview(data);
-      renderOptionButtons(data);
-      setStep('Step 2 — Select an option');
-      document.getElementById('resetBtn').style.display = 'block';
-    } catch {
-      showToast('Cannot reach server. Is it running?');
-      resetCanvas();
-    } finally {
+    if (loading) {
+      btn.className = 'btn-stop';
+      btn.innerHTML = '<span class="stop-icon"></span>';
+      btn.title = 'Stop generating';
       btn.disabled = false;
-      btn.textContent = '⬡ Generate 5 Design Options';
+      const genBtn = document.getElementById('generateBtn');
+      genBtn.disabled = true;
+      genBtn.textContent = '⟳ Generating…';
+      bar.classList.add('visible');
+      pill.classList.add('generating');
+      if (statusText) document.getElementById('generatingStatus').textContent = statusText;
+    } else {
+      btn.className = '';
+      btn.textContent = 'Send';
+      btn.title = 'Send';
+      btn.disabled = false;
+      const genBtn = document.getElementById('generateBtn');
+      genBtn.disabled = false;
+      genBtn.textContent = '⬡ Start design in chat';
+      bar.classList.remove('visible');
+      pill.classList.remove('generating');
+      clearLoadingTimers();
+      activeLoadingId = null;
+      abortController = null;
     }
   }
 
-  function showPreview(data) {
-    const rec = data.recommendation || {};
-    const recOption = rec.recommendedOption;
-    const reasons = rec.reasons || [];
+  function clearLoadingTimers() {
+    if (loadingTimers.step) clearInterval(loadingTimers.step);
+    if (loadingTimers.clock) clearInterval(loadingTimers.clock);
+    loadingTimers = { step: null, clock: null, started: 0 };
+  }
 
-    const recHtml = recOption ? `
-      <div class="recommendation">
-        <h4>★ Recommended: Option ${recOption} — ${escapeHtml(rec.title || OPTION_LABELS[recOption] || '')}</h4>
-        <ul>${reasons.map(r => `<li>${escapeHtml(r)}</li>`).join('')}</ul>
-      </div>` : '';
+  function startLoadingTimers(loadingId) {
+    clearLoadingTimers();
+    loadingTimers.started = Date.now();
+    let stepIndex = 0;
 
-    document.getElementById('resultZone').innerHTML = `
-      <div class="result-panel">
-        <div class="image-frame">
-          <img src="${data.imageUrl}" alt="5 trophy sticker options preview" />
-          <div class="image-actions">
-            <a class="action-btn" href="${data.imageUrl}" download="trophy-preview.png" target="_blank">↓ Download preview</a>
+    const updateStep = () => {
+      const text = GENERATION_STEPS[stepIndex];
+      document.getElementById('generatingStatus').textContent = text;
+      const msg = session.chat.find(m => m.id === loadingId);
+      if (msg?.loading) {
+        msg.text = text;
+        const el = document.getElementById(loadingId);
+        const stepEl = el?.querySelector('.loading-step-text');
+        if (stepEl) stepEl.textContent = text;
+      }
+      stepIndex = Math.min(stepIndex + 1, GENERATION_STEPS.length - 1);
+    };
+
+    updateStep();
+    loadingTimers.step = setInterval(updateStep, 8000);
+    loadingTimers.clock = setInterval(() => {
+      const secs = Math.floor((Date.now() - loadingTimers.started) / 1000);
+      document.getElementById('generatingTimer').textContent = `${secs}s`;
+    }, 1000);
+  }
+
+  function onChatAction() {
+    if (session.isLoading) stopGeneration();
+    else sendChat();
+  }
+
+  function stopGeneration() {
+    if (!session.isLoading) return;
+    abortController?.abort();
+  }
+
+  function renderChat() {
+    const container = document.getElementById('chatMessages');
+    if (!session.chat.length) {
+      container.innerHTML = `
+        <div class="chat-welcome">
+          <div class="empty-icon" style="margin:0 auto 16px;">💬</div>
+          <h2 style="font-family:'Space Grotesk',sans-serif;color:var(--text-primary);margin-bottom:8px;">Design chat</h2>
+          <p>Enter your award matter in the sidebar, then click <strong>Start design in chat</strong> or type a request below. Every reply creates a <strong>new image</strong> — your full history stays here.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = session.chat.map((msg, idx) => {
+      if (msg.role === 'user') {
+        return `
+          <div class="chat-msg user">
+            <div class="chat-bubble">${escapeHtml(msg.text)}</div>
+            <div class="chat-meta">${formatTime(msg.ts)}</div>
+          </div>`;
+      }
+
+      if (msg.loading) {
+        return `
+          <div class="chat-msg assistant chat-loading" id="${msg.id}">
+            <div class="chat-bubble">
+              <div class="mini-spin"></div>
+              <div>
+                <strong style="color:var(--text-primary);">Generating…</strong>
+                <span class="loading-steps loading-step-text">${escapeHtml(msg.text)}</span>
+              </div>
+            </div>
+            <div class="chat-meta">Usually takes 30–60 seconds · click Stop to cancel</div>
+          </div>`;
+      }
+
+      if (msg.cancelled) {
+        return `
+          <div class="chat-msg assistant cancelled">
+            <div class="chat-bubble">Generation stopped. Your previous designs are unchanged — send another message to try again.</div>
+            <div class="chat-meta">${formatTime(msg.ts)}</div>
+          </div>`;
+      }
+
+      const summary = msg.summary ? `<p style="margin-top:6px;">${escapeHtml(msg.summary)}</p>` : '';
+      const svgBtn = msg.svg
+        ? `<button type="button" onclick="downloadSvgAt(${idx})">↓ SVG</button>`
+        : '';
+      const themeLine = msg.theme ? `<span style="font-size:11px;color:var(--text-muted);">${escapeHtml(msg.theme)}</span>` : '';
+      const modelLine = msg.model ? `<span style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px;">Model: ${escapeHtml(msg.model)}</span>` : '';
+
+      return `
+        <div class="chat-msg assistant">
+          <div class="chat-bubble">
+            <span class="version-badge">Version ${msg.version || idx}</span>
+            ${summary}
+            <div class="chat-image-card">
+              <img src="${msg.imageUrl}" alt="Design version ${msg.version}" onclick="openChatImage(${idx})" />
+              <div class="chat-image-actions">
+                <a href="${msg.imageUrl}" download="trophy-v${msg.version || idx}.png" target="_blank">↓ PNG</a>
+                ${svgBtn}
+              </div>
+            </div>
+            ${themeLine}
+            ${modelLine}
           </div>
-        </div>
-        ${recHtml}
-        <p style="font-size:13px;color:var(--text-secondary);">Select an option from the sidebar to generate your final trophy sticker.</p>
-      </div>`;
+          <div class="chat-meta">Trophy House AI · ${formatTime(msg.ts)}</div>
+        </div>`;
+    }).join('');
+
+    scrollChatToBottom();
   }
 
-  function renderOptionButtons(data) {
-    const grid = document.getElementById('optionGrid');
-    const container = document.getElementById('optionButtons');
-    const rec = data.recommendation?.recommendedOption;
-
-    container.innerHTML = [1, 2, 3, 4, 5].map(n => `
-      <button class="option-btn${rec === n ? ' recommended' : ''}" onclick="finalizeOption(${n})">
-        <div class="opt-num">Option ${n}${rec === n ? ' ★ Recommended' : ''}</div>
-        <div class="opt-theme">${escapeHtml(OPTION_LABELS[n])}</div>
-      </button>`).join('');
-
-    grid.classList.add('visible');
+  function pushUserMessage(text) {
+    session.chat.push({ role: 'user', text, ts: Date.now() });
+    renderChat();
   }
 
-  async function finalizeOption(option) {
-    if (!session.matter) { showToast('Generate a preview first.'); return; }
-    if (!healthData.openaiConfigured) { showToast('OpenAI API key not configured.'); return; }
+  function pushLoadingMessage(text) {
+    const id = 'loading-' + Date.now();
+    session.chat.push({ role: 'assistant', loading: true, id, text, ts: Date.now() });
+    renderChat();
+    return id;
+  }
 
-    setStep(`Step 3 — Finalizing Option ${option}`);
-    setLoading(`Creating final Option ${option} artwork`, 'Production sticker + editable SVG');
+  function replaceLoadingWithAssistant(loadingId, data) {
+    const idx = session.chat.findIndex(m => m.id === loadingId);
+    const entry = {
+      role: 'assistant',
+      text: data.refinementSummary || 'Here is your design.',
+      summary: data.refinementSummary,
+      imageUrl: data.imageUrl,
+      svg: data.svg,
+      version: data.version,
+      theme: data.optionDetails?.theme || '',
+      model: data.model || '',
+      ts: Date.now(),
+      data,
+    };
+    if (idx >= 0) session.chat[idx] = entry;
+    else session.chat.push(entry);
+    renderChat();
+  }
 
-    document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+  function replaceLoadingWithCancelled(loadingId) {
+    const idx = session.chat.findIndex(m => m.id === loadingId);
+    const entry = {
+      role: 'assistant',
+      cancelled: true,
+      ts: Date.now(),
+    };
+    if (idx >= 0) session.chat[idx] = entry;
+    renderChat();
+  }
+
+  function removeLoadingMessage(loadingId) {
+    session.chat = session.chat.filter(m => m.id !== loadingId);
+    renderChat();
+  }
+
+  function startChat() {
+    const matter = document.getElementById('matter').value.trim();
+    if (!matter) { showToast('Enter award matter in the sidebar first.'); return; }
+    const input = document.getElementById('chatInput');
+    if (!input.value.trim()) input.value = 'Create my trophy design';
+    sendChat();
+  }
+
+  async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    if (session.isLoading) return;
+    const provider = document.getElementById('imageProvider').value;
+    if (!isImageProviderReady(provider)) {
+      showToast(provider === 'replicate'
+        ? 'Replicate API token not configured.'
+        : 'OpenAI API key not configured.');
+      return;
+    }
+    if (!healthData.openaiConfigured) {
+      showToast('OpenAI API key required for text parsing and refinement.');
+      return;
+    }
+
+    const matter = document.getElementById('matter').value.trim();
+    if (!matter) { showToast('Enter award matter in the sidebar first.'); return; }
+
+    input.value = '';
+    pushUserMessage(text);
+    abortController = new AbortController();
+    setChatLoading(true, GENERATION_STEPS[0]);
+    setStep(session.result ? 'Generating new version…' : 'Generating design…');
+
+    const isFirst = !session.result;
+    const loadingId = pushLoadingMessage(GENERATION_STEPS[0]);
+    activeLoadingId = loadingId;
+    startLoadingTimers(loadingId);
 
     try {
-      const res = await fetch('/api/finalize', {
+      let res, data;
+      const fetchOpts = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matter: session.matter, option }),
-      });
-      const data = await res.json();
-      if (!res.ok) { showToast(data.error); if (session.preview) showPreview(session.preview); return; }
+        signal: abortController.signal,
+      };
 
-      session.final = data;
-      showFinal(data);
-      setStep('Complete — Final artwork ready');
-    } catch {
-      showToast('Cannot reach server.');
-      if (session.preview) showPreview(session.preview);
+      if (isFirst) {
+        res = await fetch('/api/generate', {
+          ...fetchOpts,
+          body: JSON.stringify(buildPayload()),
+        });
+      } else {
+        res = await fetch('/api/refine', {
+          ...fetchOpts,
+          body: JSON.stringify({
+            ...buildPayload(),
+            matter,
+            feedback: text,
+            refinementHistory: session.result.refinementHistory || [],
+          }),
+        });
+      }
+      data = await res.json();
+
+      if (!res.ok) {
+        removeLoadingMessage(loadingId);
+        showToast(data.error || 'Request failed.');
+        if (data.needsPhoto) showToast('Upload a logo in the sidebar first.');
+        return;
+      }
+
+      if (data.shapeProfile) {
+        uploads.shapeProfile = data.shapeProfile;
+        const el = document.getElementById('shapeDetected');
+        el.textContent = `✓ Shape detected: ${data.shapeProfile.shape} (${data.shapeProfile.orientation})`;
+        el.classList.add('visible');
+      }
+
+      if (data.matter && data.matter !== matter) {
+        document.getElementById('matter').value = data.matter;
+        document.getElementById('charCount').textContent = `${data.matter.length} / 2000`;
+      }
+
+      session.matter = data.matter || matter;
+      session.result = data;
+      replaceLoadingWithAssistant(loadingId, data);
+      setStep(`Version ${data.version} ready`);
+      document.getElementById('resetBtn').style.display = 'block';
+      if (data.refinementSummary) showToast(data.refinementSummary, true);
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        replaceLoadingWithCancelled(loadingId);
+        setStep('Stopped');
+        showToast('Generation stopped.', true);
+        return;
+      }
+      removeLoadingMessage(loadingId);
+      showToast('Cannot reach server. Is it running?');
     } finally {
-      document.querySelectorAll('.option-btn').forEach(b => b.disabled = false);
+      setChatLoading(false);
     }
   }
 
-  function showFinal(data) {
-    const svgNote = data.svg
-      ? '<span style="color:var(--green);">✓ Editable SVG included</span>'
-      : data.svgError
-        ? `<span style="color:var(--amber);">⚠ SVG unavailable: ${escapeHtml(data.svgError)}</span>`
-        : '';
-
-    document.getElementById('resultZone').innerHTML = `
-      <div class="result-panel">
-        <div class="image-frame">
-          <img src="${data.imageUrl}" alt="Final trophy sticker Option ${data.selectedOption}" />
-          <div class="image-actions">
-            <a class="action-btn" href="${data.imageUrl}" download="trophy-option-${data.selectedOption}.png" target="_blank">↓ Download PNG</a>
-            ${data.svg ? `<button class="action-btn" onclick="downloadSvg()">↓ Download SVG</button>` : ''}
-            <button class="action-btn" onclick="generatePreview()">↺ Regenerate preview</button>
-          </div>
-        </div>
-        <div class="recommendation">
-          <h4>Option ${data.selectedOption} — ${escapeHtml(data.optionDetails?.name || '')}</h4>
-          <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;">
-            ${escapeHtml(data.optionDetails?.theme || '')} · ${svgNote}
-          </p>
-        </div>
-      </div>`;
+  function openChatImage(chatIndex) {
+    const url = session.chat[chatIndex]?.imageUrl;
+    if (url) window.open(url, '_blank');
   }
 
-  function downloadSvg() {
-    if (!session.final?.svg) { showToast('No SVG available.'); return; }
-    const blob = new Blob([session.final.svg], { type: 'image/svg+xml' });
+  function downloadSvgAt(chatIndex) {
+    const msg = session.chat[chatIndex];
+    if (!msg?.svg) { showToast('No SVG for this version.'); return; }
+    const blob = new Blob([msg.svg], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `trophy-option-${session.final.selectedOption}.svg`;
+    a.download = `trophy-v${msg.version || chatIndex}.svg`;
     a.click();
     URL.revokeObjectURL(url);
     showToast('SVG downloaded!', true);
   }
 
   function resetWorkflow() {
-    session = { matter: '', preview: null, final: null };
+    if (session.isLoading) stopGeneration();
+    session = { matter: '', result: null, chat: [], isLoading: false };
+    uploads = { trophyBase: null, photo: null, shapeProfile: null };
     document.getElementById('matter').value = '';
     document.getElementById('charCount').textContent = '0 / 2000';
-    document.getElementById('optionGrid').classList.remove('visible');
+    clearBase();
+    clearPhoto();
     document.getElementById('resetBtn').style.display = 'none';
-    setStep('Step 1 — Enter matter');
-    resetCanvas();
+    document.getElementById('chatInput').value = '';
+    setStep('Enter matter');
+    renderChat();
   }
 
-  function resetCanvas() {
-    document.getElementById('resultZone').innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">🏆</div>
-        <h2>Premium Trophy Sticker Designer</h2>
-        <p>Enter your award matter and generate five unique vertical oval sticker concepts.</p>
-      </div>`;
+  function isImageProviderReady(provider) {
+    const entry = healthData.imageProviders?.find((p) => p.id === provider);
+    return entry?.configured ?? healthData.openaiConfigured;
+  }
+
+  function onProviderChange() {
+    const provider = document.getElementById('imageProvider').value;
+    const hint = document.getElementById('providerHint');
+    if (provider === 'replicate') {
+      hint.textContent = 'FLUX.2 Pro via Replicate — strong visual accuracy. Marathi text still overlaid locally.';
+    } else {
+      hint.textContent = 'High quality OpenAI image generation.';
+    }
+    updateHealthStatus();
+  }
+
+  function updateHealthStatus() {
+    const dot = document.getElementById('statusDot');
+    const txt = document.getElementById('statusText');
+    const alert = document.getElementById('apiAlert');
+    const provider = document.getElementById('imageProvider')?.value || 'openai';
+    const imageReady = isImageProviderReady(provider);
+    const textReady = !!healthData.openaiConfigured;
+
+    if (imageReady && textReady) {
+      dot.className = 'status-dot ok';
+      txt.textContent = provider === 'replicate' ? 'Ready · FLUX.2 Pro' : 'Ready · OpenAI';
+      alert.style.display = 'none';
+      return;
+    }
+
+    dot.className = 'status-dot error';
+    if (!textReady) {
+      txt.textContent = 'OpenAI key missing';
+      alert.style.display = 'block';
+      alert.innerHTML = '⚠ OpenAI API key required for text parsing/refinement. Add <code>OPENAI_API_KEY</code> to <code>.env</code>.';
+      return;
+    }
+
+    txt.textContent = provider === 'replicate' ? 'Replicate key missing' : 'OpenAI key missing';
+    alert.style.display = 'block';
+    alert.innerHTML = provider === 'replicate'
+      ? '⚠ Replicate token not set. Add <code>REPLICATE_API_TOKEN</code> to <code>.env</code> and restart.'
+      : '⚠ OpenAI API key not set. Add <code>OPENAI_API_KEY</code> to <code>.env</code> and restart.';
+  }
+
+  async function checkHealth() {
+    try {
+      const res = await fetch('/api/health');
+      healthData = await res.json();
+      const providerSelect = document.getElementById('imageProvider');
+      if (providerSelect && healthData.defaultImageProvider) {
+        providerSelect.value = healthData.defaultImageProvider;
+      }
+      updateHealthStatus();
+    } catch {
+      document.getElementById('statusText').textContent = 'Server offline';
+    }
+  }
+
+  checkHealth();
+  onLayoutChange();
+  onProviderChange();
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+        reject(new Error(`File must be under ${MAX_UPLOAD_MB} MB.`));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Could not read file.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function onBaseUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+      uploads.trophyBase = await readFileAsDataUrl(file);
+      uploads.shapeProfile = null;
+      document.getElementById('baseBox').classList.add('has-file');
+      document.getElementById('baseThumb').src = uploads.trophyBase;
+      document.getElementById('baseMeta').textContent = file.name;
+      document.getElementById('basePreview').classList.add('visible');
+      document.getElementById('baseClear').style.display = 'block';
+      document.getElementById('shapeDetected').classList.remove('visible');
+    } catch (err) {
+      showToast(err.message);
+      input.value = '';
+    }
+  }
+
+  async function onPhotoUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+      uploads.photo = await readFileAsDataUrl(file);
+      document.getElementById('photoBox').classList.add('has-file');
+      document.getElementById('photoThumb').src = uploads.photo;
+      document.getElementById('photoMeta').textContent = file.name;
+      document.getElementById('photoPreview').classList.add('visible');
+      document.getElementById('photoClear').style.display = 'block';
+    } catch (err) {
+      showToast(err.message);
+      input.value = '';
+    }
+  }
+
+  function clearBase() {
+    uploads.trophyBase = null;
+    uploads.shapeProfile = null;
+    document.getElementById('trophyBaseInput').value = '';
+    document.getElementById('baseBox').classList.remove('has-file');
+    document.getElementById('basePreview').classList.remove('visible');
+    document.getElementById('baseClear').style.display = 'none';
+    document.getElementById('shapeDetected').classList.remove('visible');
+  }
+
+  function clearPhoto() {
+    uploads.photo = null;
+    document.getElementById('photoInput').value = '';
+    document.getElementById('photoBox').classList.remove('has-file');
+    document.getElementById('photoPreview').classList.remove('visible');
+    document.getElementById('photoClear').style.display = 'none';
+  }
+
+  function onLayoutChange() {
+    const isCert = document.getElementById('layout').value === 'certificate';
+    document.getElementById('themeRow').style.display = isCert ? 'none' : 'block';
+  }
+
+  function buildPayload() {
+    const payload = {
+      matter: document.getElementById('matter').value.trim(),
+      theme: Number(document.getElementById('theme').value),
+      layout: document.getElementById('layout').value,
+      imageProvider: document.getElementById('imageProvider').value,
+    };
+    if (uploads.trophyBase) payload.trophyBase = uploads.trophyBase;
+    if (uploads.photo) payload.photo = uploads.photo;
+    if (uploads.shapeProfile) payload.shapeProfile = uploads.shapeProfile;
+    return payload;
+  }
+
+  function setStep(text) {
+    document.getElementById('stepPill').textContent = text;
   }
 
   function showToast(msg, success = false) {

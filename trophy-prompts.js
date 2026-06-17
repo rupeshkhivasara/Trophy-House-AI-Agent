@@ -2,121 +2,177 @@ const OPTION_THEMES = {
   1: {
     name: 'Premium University Gold',
     theme: 'Elite Academic Excellence',
-    features: 'Rich gold border, university seal style, gold foil appearance, ivory background, elegant serif typography, academic prestige',
+    features: 'Rich gold border, university seal crest area at top, gold foil appearance, ivory parchment background, laurel wreaths, open book with quill at bottom',
     mood: 'Convocation Award',
   },
   2: {
     name: 'Royal Blue Excellence',
     theme: 'National Level Recognition',
-    features: 'Royal blue, metallic gold accents, formal composition, ribbon style hierarchy, premium academic feel',
+    features: 'Royal blue gradient, metallic gold accents, swirling gold ribbons, quill in inkwell, musical staff ornaments',
     mood: 'State Award',
   },
   3: {
     name: 'Literary Poetry Theme',
     theme: 'Poetry and Literature',
-    features: 'Poetry waves, abstract book forms, knowledge flame, literary crest, ink-inspired geometry, elegant Marathi composition — not only feather pens',
+    features: 'Warm parchment background, watercolor splashes, open book with knowledge flame, feather quill, literary crest ornaments',
     mood: 'Poet Recognition',
   },
   4: {
     name: 'Maharashtrian Cultural Theme',
     theme: 'Traditional Maharashtra',
-    features: 'Warli inspired motifs, traditional borders, cultural ornamentation, rich saffron-maroon palette, ceremonial appearance',
+    features: 'Warli inspired motifs, saffron-maroon gradient, traditional borders, cultural ornamentation, ceremonial medallion',
     mood: 'Cultural Excellence Award',
   },
   5: {
     name: 'Ultra Luxury Trophy Theme',
     theme: 'Premium Trophy Product',
-    features: 'Black and gold, metallic finish, modern luxury, clean hierarchy, minimal ornamentation',
+    features: 'Solid black background, polished gold lines, vintage microphone, open book with gold quill, soundwave gold accents',
     mood: 'High-End Trophy Manufacturer Edition',
   },
 };
 
-const CORE_RULES = `You are a world-class Trophy Sticker Designer with 50+ years of experience. Think like a real trophy designer, not a generic AI image generator. Every design must look like a premium commercially manufacturable trophy sticker.
+const NO_TEXT_RULE = `CRITICAL — NO TEXT RULE:
+Do NOT render ANY text, letters, numbers, words, Devanagari script, Hindi, Marathi, English, or gibberish characters anywhere in the image.
+Leave clean empty zones for text overlay:
+- Top 20%: blank cream or subtle area for institution names (small circular seal/logo placeholders allowed but no text)
+- Center 35%: clear banner or open area for large award title
+- Mid section: blank ribbon or space for event level
+- Bottom 15%: clear area for year between laurel wreaths or ornaments
+All typography will be added separately — the image must be decoration and layout ONLY.`;
 
-MANDATORY SHAPE: Vertical portrait oval only — tall oval like professional trophy stickers. NOT horizontal, circular, shield, or rectangle. All content must fit completely inside the oval with 5% safe margin; text and decoration never touch the border.
+const CORE_RULES = `You are a world-class Trophy Sticker background artist. Create premium commercially manufacturable trophy sticker VISUALS only.
 
-PRINT: Readable at 90mm×65mm and 100mm×75mm. Suitable for UV, eco-solvent, vinyl, digital trophy, acrylic, wooden, and metal plaque production.
+PRINT: Suitable for UV, vinyl, and trophy manufacturing at 90mm×65mm and 100mm×75mm.
 
-TYPOGRAPHY HIERARCHY: Primary = Award Title; Secondary = Event Level; Tertiary = Institution Names; Supporting = Year, tagline, sponsors, category. Marathi Devanagari must be prestigious, ceremonial, academic, and highly readable — no fancy unreadable or condensed fonts.
+QUALITY: Ultra-premium photorealistic 3D trophy product render. Studio lighting with soft specular highlights on gold metal. Deep rich gradients (navy-to-cream, royal blue, or warm parchment). Embossed layered gold borders with realistic metallic reflection. Decorative ornaments: laurel wreaths, open books, fountain pens, quills, ribbons, medallions. Professional trophy manufacturer catalog quality — like a ₹500+ commercial award sticker.
 
-QUALITY: Premium, elegant, expensive, award-worthy, collectible, professional. NOT cheap, generic, template-based, or social-media style. Avoid certificate/poster/flyer layouts.
+${NO_TEXT_RULE}`;
 
-CREATIVITY: Each option must differ completely in layout, border, hierarchy, decoration, background, typography, theme, and mood — as if designed by five different senior designers. NOT five color variations of the same layout.`;
+function buildShapeRules(shapeProfile) {
+  if (!shapeProfile) {
+    return `MANDATORY SHAPE: Vertical portrait oval only — tall oval like professional trophy stickers. Thick polished metallic gold frame. NOT horizontal, circular, shield, or rectangle. 5% safe margin inside oval.`;
+  }
 
-function buildPreviewImagePrompt(matter) {
+  return `MANDATORY SHAPE (from uploaded trophy base — match exactly):
+- Shape: ${shapeProfile.shape || 'custom'}
+- Orientation: ${shapeProfile.orientation || 'portrait'}
+- Aspect ratio: ${shapeProfile.aspectRatio || 'match reference'}
+- Border: ${shapeProfile.borderDescription || 'preserve uploaded border'}
+- Inner panel: ${shapeProfile.innerAreaDescription || 'decorate inside only'}
+- Guidance: ${shapeProfile.designGuidance || 'Follow the uploaded silhouette precisely.'}
+Preserve the exact outer silhouette of the uploaded trophy base. Decorate only inside the inner printable area. Leave top-center space clear for a circular logo/photo overlay.`;
+}
+
+function buildVisualOnlyPrompt(option, shapeProfile = null, hasPhoto = false, layout = 'sticker') {
+  if (layout === 'certificate') {
+    return buildCertificateVisualPrompt(shapeProfile);
+  }
+
+  const o = OPTION_THEMES[option];
+  const shapeRules = buildShapeRules(shapeProfile);
+  const photoNote = hasPhoto
+    ? '\nLeave a clear circular zone at top-center (about 16% width) for a logo/photo — no decoration overlapping that area.'
+    : '';
+
+  return `${CORE_RULES}
+
+${shapeRules}${photoNote}
+
+TASK: Generate ONE single trophy sticker BACKGROUND — centered, filling the frame. No comparison sheet, no multiple designs.
+
+DESIGN THEME: ${o.name}
+Theme: ${o.theme}
+Visual features: ${o.features}
+Mood: ${o.mood}
+
+Composition: Single vertical portrait oval centered on dark neutral background. Thick polished gold oval frame with 3D depth. Inner design uses rich gradients and ornamental details at top and bottom thirds. Middle third must stay relatively clean/open for text overlay banners. Bottom: decorative book, quill, or laurel wreath. Top: ornamental crest area (leave center-top clear for logo).
+
+Photorealistic trophy manufacturer product shot. Decorative elements only — absolutely zero text or letter-like shapes.`;
+}
+
+function buildCertificateVisualPrompt(shapeProfile) {
+  const shapeNote = shapeProfile
+    ? `Match uploaded base shape: ${shapeProfile.shape}. ${shapeProfile.designGuidance}`
+    : `Layout: Large vertical OVAL frame on top (70% height) connected to smaller RECTANGLE frame below (30% height) — classic Indian award certificate / सन्मानचिन्ह plaque layout.`;
+
+  return `Create a premium Marathi award certificate BACKGROUND template — visuals only, NO TEXT.
+
+${shapeNote}
+
+STYLE (match professional trophy-shop certificate templates):
+- Clean white or cream background — NOT dark, NOT blue gradient
+- Thin double-line GOLD borders on both oval and rectangle
+- Ornamental gold filigree flourishes at top of oval and between oval and rectangle
+- Small gold diamond divider lines between text zones (decorative only, no letters)
+- Elegant, formal, minimal — like a physical wooden/acrylic plaque
+- NO open books, NO quills, NO flames, NO microphones, NO watercolor
+- NO 3D objects in center — keep center area clean/open for text overlay
+- NO Devanagari, NO Hindi, NO English, NO numbers, NO gibberish characters anywhere
+
+Leave open blank zones:
+- Top of oval: header institution name area
+- Center of oval: large title area (सन्मानचिन्ह size)
+- Lower oval: 4 lines of body/citation text area
+- Bottom rectangle: presenter organization name area
+
+Print-ready, symmetrical, centered, professional certificate template.`;
+}
+
+function buildPreviewSheetPrompt() {
   const optionBlocks = Object.entries(OPTION_THEMES).map(([num, o]) =>
-    `OPTION ${num} — ${o.name}: ${o.theme}. ${o.features}. Mood: ${o.mood}.`
+    `Oval ${num} — ${o.name}: ${o.theme}. ${o.features}.`
   ).join('\n');
 
   return `${CORE_RULES}
 
-TASK: Generate ONE preview sheet image only. Inside this single image, show all five trophy sticker options arranged clearly in a grid (e.g. row of five or 2+3 layout). Each option is a separate vertical portrait oval sticker, clearly labeled "OPTION 1" through "OPTION 5" above or below each oval.
+TASK: Generate ONE preview presentation image showing five vertical portrait oval trophy sticker backgrounds in a horizontal row.
 
-Each of the five ovals must contain the complete award matter below with proper typography hierarchy. All five must look completely different — different designers, different themes:
+Below each oval only the English labels "OPTION 1", "OPTION 2", "OPTION 3", "OPTION 4", "OPTION 5" in plain sans-serif outside the ovals.
 
+Inside each oval: decoration and layout only — NO award text, NO Devanagari, NO institution names, NO year numbers inside the ovals.
+
+Five completely different visual themes:
 ${optionBlocks}
 
-If award title is short, add an elegant prestige tagline in Marathi or English that enhances the design.
-
-Include layered borders, metallic accents, foil-style effects, elegant dividers, trophy-grade ornaments, and award medallion elements where appropriate.
-
-AWARD MATTER (include in every option with correct hierarchy):
-${matter.trim()}`;
+Photorealistic premium trophy manufacturer presentation on dark background.`;
 }
 
-function buildFinalImagePrompt(matter, option) {
-  const o = OPTION_THEMES[option];
-  if (!o) throw new Error('Invalid option. Choose 1–5.');
-
-  return `${CORE_RULES}
-
-TASK: Generate ONE final production-ready trophy sticker design only — not a comparison sheet.
-
-SELECTED DESIGN: OPTION ${option} — ${o.name}
-Theme: ${o.theme}
-Features: ${o.features}
-Mood: ${o.mood}
-
-Show a single vertical portrait oval trophy sticker, centered, print-ready, with all award matter rendered with perfect typography hierarchy inside the oval. Premium manufacturing quality with layered borders, metallic accents, and foil-style effects appropriate to this theme.
-
-If award title is short, add an elegant prestige tagline.
-
-AWARD MATTER:
-${matter.trim()}`;
+function buildFinalImagePrompt(option) {
+  return buildVisualOnlyPrompt(option);
 }
 
-const RECOMMENDATION_SYSTEM = `You are a senior Trophy Sticker Creative Director and manufacturing consultant. You review preview sheets showing 5 trophy sticker options (OPTION 1–5) for award stickers.
-
-Analyze the preview image and award matter. Recommend the single strongest option number (1, 2, 3, 4, or 5).
+const RECOMMENDATION_SYSTEM = `You are a senior Trophy Sticker Creative Director. Review trophy sticker design previews (OPTION 1–5) and recommend the strongest option.
 
 Respond in JSON only:
 {"recommendedOption":1,"title":"Option name","reasons":["reason 1","reason 2","reason 3"]}
 
-Evaluate: visibility from distance, trophy presence, manufacturing quality, Marathi/Devanagari readability if present, prestige factor, long-term appearance, and commercial sellability.`;
+Evaluate: visual impact from distance, trophy presence, manufacturing quality, prestige factor, and commercial sellability. Text is added separately so ignore missing text.`;
 
-const SVG_SYSTEM = `You are a trophy sticker vector production specialist. Generate clean, print-ready SVG code for a vertical portrait oval trophy sticker.
+const SVG_SYSTEM = `You are a trophy sticker vector production specialist. Generate clean, print-ready SVG for a vertical portrait oval trophy sticker.
 
 Requirements:
-- Proper viewBox for 90mm×65mm proportions (use viewBox="0 0 900 650")
-- Organized groups with ids: border, background, ornaments, text-primary, text-secondary, text-tertiary, text-supporting
-- Editable text elements (not paths) for all award matter lines
-- 5% safe margin inside oval clipPath
-- CorelDRAW, Illustrator, and Inkscape compatible
-- Simple vector shapes for borders and ornaments; no raster embeds
-- Return ONLY valid SVG markup, no markdown fences, no explanation`;
+- viewBox="0 0 900 650"
+- Use font-family="Noto Sans Devanagari, sans-serif" on all text elements
+- Groups: border, background, ornaments, text-primary, text-secondary, text-tertiary, text-supporting
+- Editable <text> elements (not paths) for all award matter
+- Oval clipPath with 5% safe margin
+- Return ONLY valid SVG markup, no markdown`;
 
 function buildSvgUserPrompt(matter, option) {
   const o = OPTION_THEMES[option];
   return `Create editable SVG for OPTION ${option} — ${o.name} (${o.theme}).
-Style: ${o.features}. Mood: ${o.mood}.
+Style: ${o.features}. Use Noto Sans Devanagari for all text.
 
-Award matter with hierarchy:
+Award matter:
 ${matter.trim()}`;
 }
 
 module.exports = {
   OPTION_THEMES,
-  buildPreviewImagePrompt,
+  buildVisualOnlyPrompt,
+  buildCertificateVisualPrompt,
+  buildPreviewSheetPrompt,
+  buildPreviewImagePrompt: buildPreviewSheetPrompt,
   buildFinalImagePrompt,
   RECOMMENDATION_SYSTEM,
   SVG_SYSTEM,

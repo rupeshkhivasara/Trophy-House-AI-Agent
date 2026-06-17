@@ -3,24 +3,41 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const OpenAI = require('openai');
+const { toFile } = require('openai');
 const {
   OPTION_THEMES,
-  buildPreviewImagePrompt,
-  buildFinalImagePrompt,
-  RECOMMENDATION_SYSTEM,
+  buildVisualOnlyPrompt,
   SVG_SYSTEM,
   buildSvgUserPrompt,
 } = require('./trophy-prompts');
+const { parseMatter } = require('./matter-parser');
+const { compositeTextOnImage, buildTextOverlaySvg, buildCertificateOverlaySvg } = require('./text-overlay');
+const {
+  analyzeTrophyBase,
+  compositePhotoOnImage,
+  preparePngBuffer,
+} = require('./image-assets');
+const {
+  parseRefinement,
+  applyMatterUpdates,
+  buildRefinementPrompt,
+} = require('./refinement');
+const {
+  FLUX_MODEL,
+  isReplicateConfigured,
+  generateFluxImage,
+} = require('./replicate-provider');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const OPENAI_PLACEHOLDER = 'sk-your-openai-api-key-here';
-const IMAGE_MODEL = process.env.IMAGE_MODEL || 'gpt-image-1';
+const IMAGE_MODEL = process.env.IMAGE_MODEL || 'gpt-image-2';
 const TEXT_MODEL = process.env.TEXT_MODEL || 'gpt-4o';
+const DEFAULT_THEME = 2;
+const DEFAULT_IMAGE_PROVIDER = process.env.IMAGE_PROVIDER === 'replicate' ? 'replicate' : 'openai';
 
-const PREVIEW_SIZE = '1792x1024';
-const FINAL_SIZE = '1024x1792';
+const OPTION_SIZE = '1024x1792';
 const QUALITY = 'hd';
 
 const OPENAI_GPT_SIZE_MAP = {
@@ -34,7 +51,7 @@ const OPENAI_GPT_QUALITY_MAP = {
 };
 
 app.use(cors());
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const openai = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== OPENAI_PLACEHOLDER
@@ -60,7 +77,7 @@ function parseProviderError(err) {
       const parsed = JSON.parse(message);
       message = parsed.error?.message || message;
     } catch {
-      // keep original message
+      // keep original
     }
   }
 
@@ -72,21 +89,100 @@ function isGptImageModel(model) {
 }
 
 function validateMatter(matter) {
-  if (!matter || matter.trim() === '') {
-    return 'Award matter is required.';
+  if (!matter || matter.trim() === '') return 'Award matter is required.';
+  return null;
+}
+
+function parseImageProvider(provider) {
+  return provider === 'replicate' ? 'replicate' : 'openai';
+}
+
+function isImageProviderConfigured(provider) {
+  if (provider === 'replicate') return isReplicateConfigured();
+  return isOpenAiConfigured();
+}
+
+function validateImageProvider(provider) {
+  if (!isImageProviderConfigured(provider)) {
+    if (provider === 'replicate') {
+      return 'Replicate API token not configured. Add REPLICATE_API_TOKEN to your .env file.';
+    }
+    return 'OpenAI API key not configured. Add OPENAI_API_KEY to your .env file.';
   }
   return null;
 }
 
-function validateOption(option) {
-  const num = Number(option);
-  if (!Number.isInteger(num) || num < 1 || num > 5) {
-    return 'Invalid option. Choose 1–5.';
-  }
-  return null;
+function parseTheme(theme) {
+  const num = Number(theme) || DEFAULT_THEME;
+  if (!Number.isInteger(num) || num < 1 || num > 5) return DEFAULT_THEME;
+  return num;
 }
 
-async function generateImage(prompt, size) {
+function parseAssets(body) {
+  return {
+    trophyBase: body.trophyBase || null,
+    photo: body.photo || null,
+    shapeProfile: body.shapeProfile || null,
+  };
+}
+
+async function resolveShapeProfile(assets) {
+  if (assets.shapeProfile) return assets.shapeProfile;
+  if (!assets.trophyBase) return null;
+
+  console.log('  ⟳ Analyzing uploaded trophy base shape...');
+  const profile = await analyzeTrophyBase(openai, TEXT_MODEL, assets.trophyBase);
+  console.log(`  ✓ Shape detected: ${profile.shape} (${profile.orientation})`);
+  return profile;
+}
+
+async function generateImageEdit(prompt, sourceDataUrl, size = OPTION_SIZE) {
+  const pngBuffer = await preparePngBuffer(sourceDataUrl);
+  const file = await toFile(pngBuffer, 'design.png', { type: 'image/png' });
+
+  const params = {
+    model: IMAGE_MODEL,
+    image: file,
+    prompt: `${prompt.trim()}\n\nApply these visual changes to the existing design. Keep layout and shape. No text or letters.`,
+    n: 1,
+  };
+
+  if (isGptImageModel(IMAGE_MODEL)) {
+    params.size = OPENAI_GPT_SIZE_MAP[size] || 'auto';
+    params.quality = OPENAI_GPT_QUALITY_MAP[QUALITY] || 'high';
+  }
+
+  const response = await openai.images.edit(params);
+  const imageData = response.data[0];
+  const imageUrl = toImageUrl(imageData);
+  if (!imageUrl) throw new Error('No image data returned from OpenAI edit.');
+  return { imageUrl, revisedPrompt: imageData.revised_prompt, model: IMAGE_MODEL, mode: 'edit' };
+}
+
+async function generateImage(prompt, size = OPTION_SIZE, trophyBaseDataUrl = null) {
+  if (trophyBaseDataUrl) {
+    const pngBuffer = await preparePngBuffer(trophyBaseDataUrl);
+    const file = await toFile(pngBuffer, 'trophy-base.png', { type: 'image/png' });
+
+    const params = {
+      model: IMAGE_MODEL,
+      image: file,
+      prompt: `${prompt.trim()}\n\nDecorate inside the uploaded trophy base shape. Keep the exact outer silhouette and border. No text.`,
+      n: 1,
+    };
+
+    if (isGptImageModel(IMAGE_MODEL)) {
+      params.size = OPENAI_GPT_SIZE_MAP[size] || 'auto';
+      params.quality = OPENAI_GPT_QUALITY_MAP[QUALITY] || 'high';
+    }
+
+    const response = await openai.images.edit(params);
+    const imageData = response.data[0];
+    const imageUrl = toImageUrl(imageData);
+    if (!imageUrl) throw new Error('No image data returned from OpenAI edit.');
+    return { imageUrl, revisedPrompt: imageData.revised_prompt, model: IMAGE_MODEL, mode: 'edit' };
+  }
+
   const params = {
     model: IMAGE_MODEL,
     prompt: prompt.trim(),
@@ -104,56 +200,87 @@ async function generateImage(prompt, size) {
   const response = await openai.images.generate(params);
   const imageData = response.data[0];
   const imageUrl = toImageUrl(imageData);
+  if (!imageUrl) throw new Error('No image data returned from OpenAI.');
+  return { imageUrl, revisedPrompt: imageData.revised_prompt, model: IMAGE_MODEL, mode: 'generate' };
+}
 
-  if (!imageUrl) {
-    throw new Error('No image data returned from OpenAI.');
+async function generateImageWithProvider(provider, prompt, size = OPTION_SIZE, trophyBaseDataUrl = null) {
+  if (provider === 'replicate') {
+    return generateFluxImage(prompt, { trophyBaseDataUrl });
+  }
+  return generateImage(prompt, size, trophyBaseDataUrl);
+}
+
+async function generateTrophyDesign(matter, parsed, theme, assets = {}, layout = 'sticker', refineOptions = {}, imageProvider = 'openai') {
+  const { refinementHistory = [], visualChanges = null } = refineOptions;
+
+  const hasPhoto = !!assets.photo && !refineOptions.forceNoPhoto;
+  const basePrompt = buildVisualOnlyPrompt(theme, assets.shapeProfile, hasPhoto, layout);
+  const prompt = buildRefinementPrompt(basePrompt, refinementHistory, visualChanges);
+
+  const image = await generateImageWithProvider(imageProvider, prompt, OPTION_SIZE, assets.trophyBase);
+
+  let workingUrl = image.imageUrl;
+  if (hasPhoto && layout !== 'certificate') {
+    workingUrl = await compositePhotoOnImage(workingUrl, assets.photo);
   }
 
+  const imageUrl = await compositeTextOnImage(workingUrl, parsed, theme, { hasPhoto, layout });
+
   return {
+    theme,
+    name: OPTION_THEMES[theme].name,
+    themeDetails: OPTION_THEMES[theme],
+    backgroundUrl: image.imageUrl,
     imageUrl,
-    revisedPrompt: imageData.revised_prompt,
-    model: IMAGE_MODEL,
+    model: image.model,
+    generationMode: image.mode,
   };
 }
 
-async function getRecommendation(matter, imageUrl) {
-  const completion = await openai.chat.completions.create({
-    model: TEXT_MODEL,
-    messages: [
-      { role: 'system', content: RECOMMENDATION_SYSTEM },
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: `Award matter:\n${matter.trim()}\n\nWhich option (1–5) do you recommend?` },
-          { type: 'image_url', image_url: { url: imageUrl } },
-        ],
-      },
-    ],
-    max_tokens: 500,
-    temperature: 0.3,
-    response_format: { type: 'json_object' },
-  });
-
-  const raw = completion.choices[0].message.content.trim();
+async function buildDesignResponse(matter, parsed, theme, assets, layout, result, refinementHistory = [], meta = {}) {
+  let svg = null;
+  let svgError = null;
   try {
-    const parsed = JSON.parse(raw);
-    const option = Number(parsed.recommendedOption);
-    return {
-      recommendedOption: option >= 1 && option <= 5 ? option : null,
-      title: parsed.title || (option ? OPTION_THEMES[option]?.name : null),
-      reasons: Array.isArray(parsed.reasons) ? parsed.reasons : [parsed.reason || raw],
-    };
-  } catch {
-    return { recommendedOption: null, title: null, reasons: [raw] };
+    svg = await generateSvg(matter, theme);
+  } catch (svgErr) {
+    svgError = svgErr.message;
+    svg = layout === 'certificate'
+      ? buildCertificateOverlaySvg(parsed, 900, 1300)
+      : buildTextOverlaySvg(parsed, theme, 900, 1300, { hasPhoto: !!assets.photo });
   }
+
+  return {
+    success: true,
+    matter: matter.trim(),
+    parsedMatter: parsed,
+    shapeProfile: assets.shapeProfile,
+    hasTrophyBase: !!assets.trophyBase,
+    hasPhoto: !!assets.photo,
+    theme,
+    layout,
+    refinementHistory,
+    version: refinementHistory.length + 1,
+    refinementSummary: meta.refinementSummary || null,
+    userMessage: meta.userMessage || null,
+    optionDetails: layout === 'certificate'
+      ? { name: 'Classic Certificate', theme: 'Oval + rectangle सन्मानचिन्ह layout' }
+      : result.themeDetails,
+    imageUrl: result.imageUrl,
+    backgroundUrl: result.backgroundUrl,
+    model: result.model,
+    imageProvider: meta.imageProvider || 'openai',
+    svg,
+    svgError,
+  };
 }
 
-async function generateSvg(matter, option) {
+async function generateSvg(matter, theme) {
   const completion = await openai.chat.completions.create({
     model: TEXT_MODEL,
     messages: [
       { role: 'system', content: SVG_SYSTEM },
-      { role: 'user', content: buildSvgUserPrompt(matter, option) },
+      { role: 'user', content: buildSvgUserPrompt(matter, theme) },
     ],
     max_tokens: 4000,
     temperature: 0.4,
@@ -174,7 +301,7 @@ function handleApiError(err, res) {
   console.error('  ✗ Error:', message);
 
   if (status === 401) {
-    return res.status(401).json({ error: 'Invalid API key. Check OPENAI_API_KEY in .env' });
+    return res.status(401).json({ error: message.includes('Replicate') ? message : 'Invalid API key. Check your .env configuration.' });
   }
   if (status === 429) {
     return res.status(429).json({ error: 'Rate limit reached. Wait a moment and try again.' });
@@ -198,103 +325,142 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     openaiConfigured: isOpenAiConfigured(),
-    apiKeyConfigured: isOpenAiConfigured(),
+    replicateConfigured: isReplicateConfigured(),
     imageModel: IMAGE_MODEL,
+    replicateModel: FLUX_MODEL,
+    defaultImageProvider: DEFAULT_IMAGE_PROVIDER,
     textModel: TEXT_MODEL,
-  });
-});
-
-app.get('/api/options', (req, res) => {
-  res.json({
-    options: Object.entries(OPTION_THEMES).map(([num, o]) => ({
+    textOverlay: 'Noto Sans Devanagari',
+    imageProviders: [
+      {
+        id: 'openai',
+        name: `OpenAI ${IMAGE_MODEL}`,
+        configured: isOpenAiConfigured(),
+      },
+      {
+        id: 'replicate',
+        name: 'Replicate FLUX.2 Pro',
+        model: FLUX_MODEL,
+        configured: isReplicateConfigured(),
+      },
+    ],
+    features: { trophyBaseUpload: true, photoUpload: true, singleImage: true, refinement: true },
+    themes: Object.entries(OPTION_THEMES).map(([num, o]) => ({
       number: Number(num),
-      ...o,
+      name: o.name,
+      theme: o.theme,
     })),
   });
 });
 
-app.post('/api/preview', async (req, res) => {
+app.post('/api/generate', async (req, res) => {
   const { matter } = req.body;
   const matterError = validateMatter(matter);
   if (matterError) return res.status(400).json({ error: matterError });
   if (!isOpenAiConfigured()) {
-    return res.status(401).json({ error: 'OpenAI API key not configured. Add OPENAI_API_KEY to your .env file.' });
+    return res.status(401).json({ error: 'OpenAI API key not configured. Required for text parsing and refinement.' });
   }
 
+  const imageProvider = parseImageProvider(req.body.imageProvider || DEFAULT_IMAGE_PROVIDER);
+  const providerError = validateImageProvider(imageProvider);
+  if (providerError) return res.status(401).json({ error: providerError });
+
+  const theme = parseTheme(req.body.theme);
+  const layout = req.body.layout === 'certificate' ? 'certificate' : 'sticker';
+  const assets = parseAssets(req.body);
+
   try {
-    console.log(`\n[${new Date().toLocaleTimeString()}] Generating 5-option preview...`);
-    console.log(`  Matter : ${matter.trim().slice(0, 80)}${matter.trim().length > 80 ? '...' : ''}`);
+    const parsed = parseMatter(matter);
+    assets.shapeProfile = await resolveShapeProfile(assets);
 
-    const imagePrompt = buildPreviewImagePrompt(matter);
-    const image = await generateImage(imagePrompt, PREVIEW_SIZE);
+    console.log(`\n[${new Date().toLocaleTimeString()}] Generating trophy design...`);
+    console.log(`  Title  : ${parsed.title || '(from lines)'}`);
+    console.log(`  Layout : ${layout}`);
+    console.log(`  Theme  : ${layout === 'certificate' ? 'Certificate' : OPTION_THEMES[theme].name}`);
+    console.log(`  Provider: ${imageProvider}`);
+    console.log(`  Model  : ${imageProvider === 'replicate' ? FLUX_MODEL : IMAGE_MODEL}`);
+    console.log(`  Base   : ${assets.trophyBase ? 'uploaded' : 'default oval'}`);
+    console.log(`  Photo  : ${assets.photo ? 'uploaded' : 'none'}`);
 
-    console.log('  ⟳ Getting recommendation...');
-    const recommendation = await getRecommendation(matter, image.imageUrl);
-
-    console.log(`  ✓ Preview ready — recommends Option ${recommendation.recommendedOption || '?'}`);
-
-    res.json({
-      success: true,
-      step: 'preview',
-      matter: matter.trim(),
-      imageUrl: image.imageUrl,
-      revisedPrompt: image.revisedPrompt,
-      model: image.model,
-      recommendation,
-      options: Object.entries(OPTION_THEMES).map(([num, o]) => ({
-        number: Number(num),
-        name: o.name,
-        theme: o.theme,
-      })),
+    const result = await generateTrophyDesign(matter, parsed, theme, assets, layout, {}, imageProvider);
+    const response = await buildDesignResponse(matter, parsed, theme, assets, layout, result, [], {
+      userMessage: 'Create trophy design',
+      refinementSummary: 'Here is your first design. Tell me what to change and I will create a new version.',
+      imageProvider,
     });
+
+    console.log('  ✓ Design ready');
+    res.json(response);
   } catch (err) {
     return handleApiError(err, res);
   }
 });
 
-app.post('/api/finalize', async (req, res) => {
-  const { matter, option } = req.body;
+app.post('/api/refine', async (req, res) => {
+  const { feedback, matter, refinementHistory = [] } = req.body;
+  if (!feedback || !feedback.trim()) {
+    return res.status(400).json({ error: 'Describe what you want to change.' });
+  }
   const matterError = validateMatter(matter);
   if (matterError) return res.status(400).json({ error: matterError });
-  const optionError = validateOption(option);
-  if (optionError) return res.status(400).json({ error: optionError });
   if (!isOpenAiConfigured()) {
-    return res.status(401).json({ error: 'OpenAI API key not configured. Add OPENAI_API_KEY to your .env file.' });
+    return res.status(401).json({ error: 'OpenAI API key not configured. Required for text parsing and refinement.' });
   }
 
-  const optionNum = Number(option);
+  const imageProvider = parseImageProvider(req.body.imageProvider || DEFAULT_IMAGE_PROVIDER);
+  const providerError = validateImageProvider(imageProvider);
+  if (providerError) return res.status(401).json({ error: providerError });
+
+  const theme = parseTheme(req.body.theme);
+  const layout = req.body.layout === 'certificate' ? 'certificate' : 'sticker';
+  const assets = parseAssets(req.body);
+  const history = Array.isArray(refinementHistory) ? [...refinementHistory] : [];
 
   try {
-    console.log(`\n[${new Date().toLocaleTimeString()}] Finalizing Option ${optionNum}...`);
-    console.log(`  Matter : ${matter.trim().slice(0, 80)}${matter.trim().length > 80 ? '...' : ''}`);
+    let parsed = parseMatter(matter);
+    assets.shapeProfile = await resolveShapeProfile(assets);
 
-    const imagePrompt = buildFinalImagePrompt(matter, optionNum);
-    const image = await generateImage(imagePrompt, FINAL_SIZE);
+    const refinement = await parseRefinement(openai, TEXT_MODEL, feedback.trim(), {
+      layout,
+      theme,
+      themeName: layout === 'certificate' ? 'Certificate' : OPTION_THEMES[theme].name,
+      hasPhoto: !!assets.photo,
+      hasTrophyBase: !!assets.trophyBase,
+      matter,
+      refinementHistory: history,
+    });
 
-    console.log('  ⟳ Generating editable SVG...');
-    let svg = null;
-    let svgError = null;
-    try {
-      svg = await generateSvg(matter, optionNum);
-    } catch (svgErr) {
-      svgError = svgErr.message;
-      console.warn('  ⚠ SVG generation failed:', svgError);
+    if (refinement.removePhoto) assets.photo = null;
+    if (/add.*(logo|photo)/i.test(feedback) && !assets.photo) {
+      return res.status(400).json({
+        error: 'Upload a logo/photo in the sidebar first, then send your refine request again.',
+        needsPhoto: true,
+      });
     }
 
-    console.log('  ✓ Final artwork ready');
+    parsed = applyMatterUpdates(parsed, refinement.matterUpdates);
+    history.push(refinement.visualChanges);
 
-    res.json({
-      success: true,
-      step: 'final',
-      matter: matter.trim(),
-      selectedOption: optionNum,
-      optionDetails: OPTION_THEMES[optionNum],
-      imageUrl: image.imageUrl,
-      revisedPrompt: image.revisedPrompt,
-      model: image.model,
-      svg,
-      svgError,
+    console.log(`\n[${new Date().toLocaleTimeString()}] Refining design...`);
+    console.log(`  Feedback: ${feedback.trim().slice(0, 80)}`);
+    console.log(`  Change  : ${refinement.summary}`);
+    console.log(`  Provider: ${imageProvider}`);
+    console.log(`  Model  : ${imageProvider === 'replicate' ? FLUX_MODEL : IMAGE_MODEL}`);
+
+    const result = await generateTrophyDesign(matter, parsed, theme, assets, layout, {
+      refinementHistory: history,
+      visualChanges: refinement.visualChanges,
+      forceNoPhoto: refinement.removePhoto,
+    }, imageProvider);
+
+    const response = await buildDesignResponse(matter, parsed, theme, assets, layout, result, history, {
+      refinementSummary: refinement.summary,
+      userMessage: feedback.trim(),
+      imageProvider,
     });
+
+    console.log('  ✓ Refinement applied');
+    res.json(response);
   } catch (err) {
     return handleApiError(err, res);
   }
@@ -306,6 +472,10 @@ app.listen(PORT, () => {
   console.log('╚════════════════════════════════════════╝');
   console.log(`\n  Running at → http://localhost:${PORT}`);
   console.log(`  OpenAI    → ${isOpenAiConfigured() ? '✓ Configured' : '✗ Not set'}`);
-  console.log(`  Models    → ${IMAGE_MODEL} (image) | ${TEXT_MODEL} (text)`);
+  console.log(`  Replicate → ${isReplicateConfigured() ? '✓ Configured' : '✗ Not set'}`);
+  console.log(`  OpenAI model → ${IMAGE_MODEL}`);
+  console.log(`  Replicate model → ${FLUX_MODEL}`);
+  console.log(`  Default provider → ${DEFAULT_IMAGE_PROVIDER}`);
+  console.log(`  Mode      → Chat-style · new image every turn`);
   console.log('\n  Press Ctrl+C to stop\n');
 });
